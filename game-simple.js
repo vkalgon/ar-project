@@ -13,10 +13,29 @@ class TicTacToeGameSimple {
     }
 
     init() {
-        this.setupEventListeners();
-        this.createBoard();
-        this.showMessage('Коснитесь экрана, чтобы разместить игровое поле');
-        this.setupClickToPlace();
+        try {
+            console.log('Инициализация игры...');
+            
+            // Скрываем индикатор загрузки
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            this.setupEventListeners();
+            this.createBoard();
+            this.showMessage('Коснитесь экрана, чтобы разместить игровое поле');
+            this.setupClickToPlace();
+            console.log('Игра инициализирована');
+        } catch (error) {
+            console.error('Ошибка инициализации:', error);
+            this.showMessage('Ошибка загрузки. Обновите страницу.');
+            
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = '<div style="text-align: center;"><div style="margin-bottom: 10px;">❌</div><div>Ошибка загрузки</div><div style="font-size: 14px; margin-top: 10px;">Обновите страницу</div></div>';
+            }
+        }
     }
 
     setupEventListeners() {
@@ -65,6 +84,12 @@ class TicTacToeGameSimple {
 
     createBoard() {
         const boardEntity = document.getElementById('game-board');
+        if (!boardEntity) {
+            console.error('Элемент game-board не найден');
+            setTimeout(() => this.createBoard(), 100);
+            return;
+        }
+        
         boardEntity.innerHTML = '';
 
         // Создаем игровое поле
@@ -299,24 +324,68 @@ class TicTacToeGameSimple {
 // Инициализация
 let game;
 
-// Ждем полной загрузки A-Frame
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGame);
-} else {
-    // Если A-Frame еще не загружен, ждем события 'loaded'
-    if (typeof AFRAME !== 'undefined') {
-        initGame();
-    } else {
-        window.addEventListener('load', () => {
-            setTimeout(initGame, 500);
-        });
+function initGame() {
+    try {
+        const scene = document.getElementById('scene');
+        if (!scene) {
+            console.error('Сцена не найдена');
+            setTimeout(initGame, 200);
+            return;
+        }
+        
+        // Ждем, пока A-Frame полностью загрузится
+        if (typeof AFRAME === 'undefined') {
+            console.log('Ожидание загрузки A-Frame...');
+            setTimeout(initGame, 200);
+            return;
+        }
+        
+        console.log('A-Frame загружен, инициализация игры...');
+        
+        // Ждем события загрузки сцены
+        const onSceneLoaded = () => {
+            console.log('A-Frame сцена загружена');
+            setTimeout(() => {
+                try {
+                    if (!game) {
+                        game = new TicTacToeGameSimple();
+                    }
+                } catch (error) {
+                    console.error('Ошибка создания игры:', error);
+                    const loadingIndicator = document.getElementById('loading-indicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.innerHTML = '<div style="text-align: center; color: red;"><div>Ошибка: ' + error.message + '</div></div>';
+                    }
+                }
+            }, 300);
+        };
+        
+        scene.addEventListener('loaded', onSceneLoaded);
+        
+        // Если сцена уже загружена
+        if (scene.hasLoaded) {
+            onSceneLoaded();
+        } else {
+            // Таймаут на случай, если событие не сработает
+            setTimeout(() => {
+                if (!game) {
+                    console.log('Принудительная инициализация...');
+                    onSceneLoaded();
+                }
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        setTimeout(initGame, 500);
     }
 }
 
-function initGame() {
-    // Дополнительная задержка для инициализации A-Frame сцены
-    setTimeout(() => {
-        game = new TicTacToeGameSimple();
-    }, 300);
+// Запускаем инициализацию после загрузки страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initGame, 300);
+    });
+} else {
+    setTimeout(initGame, 300);
 }
 

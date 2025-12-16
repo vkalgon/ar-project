@@ -162,22 +162,22 @@
     <div id="ar-container">
         <a-scene 
             vr-mode-ui="enabled: false" 
-            renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+            renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;"
             embedded
-            id="scene">
+            id="scene"
+            loading-screen="enabled: false">
             
             <!-- Камера -->
             <a-camera 
                 id="camera"
                 position="0 1.6 0"
                 look-controls="enabled: true; touchEnabled: true"
-                wasd-controls="enabled: false"
-                mobile-controls="enabled: true">
+                wasd-controls="enabled: false">
             </a-camera>
 
             <!-- Освещение -->
             <a-light type="ambient" color="#404040"></a-light>
-            <a-light type="directional" position="0 1 1" color="#ffffff"></a-light>
+            <a-light type="directional" position="0 1 1" color="#ffffff" intensity="0.8"></a-light>
 
             <!-- Игровое поле будет добавлено через JavaScript -->
             <a-entity id="game-board"></a-entity>
@@ -193,13 +193,31 @@
                 <button class="button ui-element" id="start-btn" style="display: none;">▶️ Начать игру</button>
             </div>
 
-            <div class="message" id="message">
-                Коснитесь экрана, чтобы разместить игровое поле
+            <div class="message show" id="message">
+                Загрузка игры...
+            </div>
+            
+            <div id="loading-indicator" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 18px; z-index: 1003;">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 10px;">⏳</div>
+                    <div>Загрузка AR игры...</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script>
+        // Показываем сообщение об ошибке, если что-то пошло не так
+        window.addEventListener('error', function(e) {
+            console.error('Ошибка:', e.error);
+            const message = document.getElementById('message');
+            if (message) {
+                message.textContent = 'Ошибка загрузки. Проверьте консоль браузера.';
+                message.classList.add('show');
+            }
+        });
+    </script>
     <script src="game-simple.js"></script>
 </body>
 </html>
