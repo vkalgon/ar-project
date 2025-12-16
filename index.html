@@ -12,14 +12,16 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             background: #000;
+            width: 100vw;
+            height: 100vh;
         }
 
         #ar-container {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             position: relative;
         }
 
@@ -50,22 +52,19 @@
         }
 
         .button {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            border: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             padding: 12px 20px;
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-        }
-
-        .button:hover {
-            background: rgba(0, 0, 0, 0.8);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .button:active {
+            background: rgba(0, 0, 0, 0.9);
             transform: scale(0.95);
         }
 
@@ -74,26 +73,15 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 20px 30px;
+            padding: 15px 25px;
             border-radius: 12px;
             text-align: center;
             max-width: 90%;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            pointer-events: none;
-        }
-
-        .message.show {
+            font-size: 16px;
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .message.hidden {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
+            pointer-events: none;
         }
 
         .game-over {
@@ -101,14 +89,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
             padding: 30px 40px;
             border-radius: 16px;
             text-align: center;
             font-size: 24px;
             font-weight: bold;
-            backdrop-filter: blur(15px);
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
@@ -120,41 +107,18 @@
             pointer-events: auto;
         }
 
-        .marker-info {
+        #error-message {
             position: absolute;
-            top: 80px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
+            transform: translate(-50%, -50%);
+            background: rgba(200, 0, 0, 0.9);
             color: white;
-            padding: 15px 25px;
+            padding: 20px;
             border-radius: 10px;
             text-align: center;
-            backdrop-filter: blur(10px);
-            font-size: 14px;
-        }
-
-        .marker-info a {
-            color: #4CAF50;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        @media (max-width: 480px) {
-            .message {
-                font-size: 14px;
-                padding: 15px 20px;
-            }
-
-            .button {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-
-            .game-over {
-                font-size: 20px;
-                padding: 25px 30px;
-            }
+            display: none;
+            z-index: 2000;
         }
     </style>
 </head>
@@ -162,61 +126,55 @@
     <div id="ar-container">
         <a-scene 
             vr-mode-ui="enabled: false" 
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;"
             embedded
-            id="scene"
-            loading-screen="enabled: false">
+            id="scene">
             
-            <!-- Камера -->
             <a-camera 
                 id="camera"
                 position="0 1.6 0"
-                look-controls="enabled: true; touchEnabled: true"
-                wasd-controls="enabled: false">
+                look-controls="enabled: true">
             </a-camera>
 
-            <!-- Освещение -->
             <a-light type="ambient" color="#404040"></a-light>
-            <a-light type="directional" position="0 1 1" color="#ffffff" intensity="0.8"></a-light>
+            <a-light type="directional" position="0 1 1" color="#ffffff"></a-light>
 
-            <!-- Игровое поле будет добавлено через JavaScript -->
             <a-entity id="game-board"></a-entity>
         </a-scene>
 
         <div class="ui-overlay">
             <div class="top-bar">
-                <button class="button ui-element" id="restart-btn" style="display: none;">🔄 Перезапуск</button>
+                <button class="button ui-element" id="restart-btn" style="display: none;">🔄</button>
                 <div id="game-over" class="game-over">
-                    <div>Игра окончена!</div>
+                    <div id="game-over-text">Игра окончена!</div>
                     <button class="button" id="restart-game-btn" style="margin-top: 15px;">Играть снова</button>
                 </div>
-                <button class="button ui-element" id="start-btn" style="display: none;">▶️ Начать игру</button>
+                <button class="button ui-element" id="start-btn" style="display: none;">▶️</button>
             </div>
 
-            <div class="message show" id="message">
-                Загрузка игры...
-            </div>
-            
-            <div id="loading-indicator" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 18px; z-index: 1003;">
-                <div style="text-align: center;">
-                    <div style="margin-bottom: 10px;">⏳</div>
-                    <div>Загрузка AR игры...</div>
-                </div>
+            <div class="message" id="message">
+                Загрузка...
             </div>
         </div>
+        
+        <div id="error-message"></div>
     </div>
 
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script>
-        // Показываем сообщение об ошибке, если что-то пошло не так
-        window.addEventListener('error', function(e) {
-            console.error('Ошибка:', e.error);
-            const message = document.getElementById('message');
-            if (message) {
-                message.textContent = 'Ошибка загрузки. Проверьте консоль браузера.';
-                message.classList.add('show');
+        // Таймаут для загрузки
+        let loadTimeout = setTimeout(() => {
+            const msg = document.getElementById('message');
+            if (msg) {
+                msg.textContent = 'Проблема с загрузкой. Проверьте интернет.';
+                msg.style.background = 'rgba(200, 0, 0, 0.9)';
             }
+        }, 10000);
+        
+        window.addEventListener('load', () => {
+            clearTimeout(loadTimeout);
         });
+    </script>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js" 
+            onerror="document.getElementById('message').textContent='Ошибка загрузки A-Frame. Проверьте интернет.'; document.getElementById('message').style.background='rgba(200,0,0,0.9)';">
     </script>
     <script src="game-simple.js"></script>
 </body>
